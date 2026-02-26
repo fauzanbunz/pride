@@ -1,342 +1,368 @@
-import React, { useState, useEffect, useRef } from 'react';
-
-export default function App() {
-  const [step, setStep] = useState(0);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pride Kingdom</title>
   
-  // State untuk form isian
-  const [twitterHandle, setTwitterHandle] = useState('');
-  const [proofFile, setProofFile] = useState(null);
-  const [commentLink, setCommentLink] = useState('');
-  const [evmAddress, setEvmAddress] = useState('');
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Load React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Load Babel (Compiler in-browser untuk JSX) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  // State & Ref untuk Audio Latar Belakang
-  const [isPlaying, setIsPlaying] = useState(true);
-  const audioRef = useRef(null);
-  const bgMusicUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Kingdom%20of%20Tiny%20Stars.mp3';
+  <!-- Load Pixel Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
-  // Atur autoplay saat pertama dimuat
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = 0.5;
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Jika browser memblokir autoplay (karena butuh interaksi user), set state ke OFF
-          console.log("Autoplay diblokir oleh browser:", error);
-          setIsPlaying(false);
-        });
-      }
+  <!-- Custom CSS (Animasi & Style Pixel) -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e1512;
     }
-  }, []);
+    .pixel-shadow { box-shadow: 8px 8px 0px 0px #1a100c; }
+    .pixel-shadow-sm { box-shadow: 4px 4px 0px 0px #1a100c; }
+    .pixel-shadow-inset { box-shadow: inset 4px 4px 0px 0px rgba(0,0,0,0.5); }
+    .btn-pixel:active:not(:disabled) {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px 0px #1a100c;
+    }
+    .btn-pixel:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    /* Animasi Popup Masuk */
+    @keyframes popIn {
+      0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
 
-  // URLs Background
-  const mapBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_tzq5sstzq5sstzq5.png';
-  const finalBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_wyiv2wwyiv2wwyiv.png';
+    /* Animasi Garis Merah (Jalur Peta) */
+    @keyframes drawPath {
+      0% { height: 0; opacity: 0; }
+      20% { opacity: 1; }
+      100% { height: 150px; opacity: 1; }
+    }
+    .pixel-path-animate {
+      background-image: repeating-linear-gradient(to bottom, #d32f2f 0px, #d32f2f 12px, transparent 12px, transparent 24px);
+      animation: drawPath 1s ease-out forwards;
+      animation-delay: 0.2s;
+    }
 
-  // Load Pixel Fonts and inject custom CSS
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
+    /* Animasi Teks Final */
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  
+  <!-- Tempat aplikasi React akan di-render -->
+  <div id="root"></div>
 
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .pixel-shadow { box-shadow: 8px 8px 0px 0px #1a100c; }
-      .pixel-shadow-sm { box-shadow: 4px 4px 0px 0px #1a100c; }
-      .pixel-shadow-inset { box-shadow: inset 4px 4px 0px 0px rgba(0,0,0,0.5); }
-      .btn-pixel:active:not(:disabled) {
-        transform: translate(4px, 4px);
-        box-shadow: 0px 0px 0px 0px #1a100c;
-      }
-      .btn-pixel:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
+  <!-- Script React menggunakan tipe text/babel agar terbaca oleh browser -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function App() {
+      const [step, setStep] = useState(0);
       
-      /* Animasi Popup Masuk */
-      @keyframes popIn {
-        0% { transform: scale(0.8) translateY(20px); opacity: 0; }
-        100% { transform: scale(1) translateY(0); opacity: 1; }
-      }
-      .animate-pop-in {
-        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
+      // State untuk form isian
+      const [twitterHandle, setTwitterHandle] = useState('');
+      const [proofFile, setProofFile] = useState(null);
+      const [commentLink, setCommentLink] = useState('');
+      const [evmAddress, setEvmAddress] = useState('');
 
-      /* Animasi Garis Merah (Jalur Peta) */
-      @keyframes drawPath {
-        0% { height: 0; opacity: 0; }
-        20% { opacity: 1; }
-        100% { height: 150px; opacity: 1; }
-      }
-      .pixel-path-animate {
-        background-image: repeating-linear-gradient(to bottom, #d32f2f 0px, #d32f2f 12px, transparent 12px, transparent 24px);
-        animation: drawPath 1s ease-out forwards;
-        animation-delay: 0.2s; /* Muncul sedikit setelah card */
-      }
+      // State & Ref untuk Audio Latar Belakang
+      const [isPlaying, setIsPlaying] = useState(true);
+      const audioRef = useRef(null);
+      const bgMusicUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Kingdom%20of%20Tiny%20Stars.mp3';
 
-      /* Animasi Teks Final */
-      @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-15px); }
-        100% { transform: translateY(0px); }
-      }
-      .animate-float { animation: float 3s ease-in-out infinite; }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
+      // Atur autoplay saat pertama dimuat
+      useEffect(() => {
+        if (audioRef.current) {
+          audioRef.current.volume = 0.5;
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              // Jika browser memblokir autoplay, set state ke OFF
+              console.log("Autoplay diblokir oleh browser:", error);
+              setIsPlaying(false);
+            });
+          }
+        }
+      }, []);
 
-  // Pengaturan posisi background
-  const getBackgroundStyle = () => {
-    // Transparansi 10% (0.1) warna sand
-    const sandOverlay = 'linear-gradient(rgba(232, 220, 198, 0.1), rgba(232, 220, 198, 0.1))';
-    let bgImage = `url('${mapBgUrl}')`;
-    let bgPosition = 'center 0%'; 
+      // URLs Background
+      const mapBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_tzq5sstzq5sstzq5.png';
+      const finalBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_wyiv2wwyiv2wwyiv.png';
 
-    switch(step) {
-      case 0: bgPosition = 'center 0%'; break;   // Paling Atas
-      case 1: bgPosition = 'center 50%'; break;  // Tengah (Gunung/Sungai)
-      case 2: bgPosition = 'center 100%'; break; // Bawah (Kingdom)
-      case 3: 
-        bgImage = `url('${finalBgUrl}')`; 
-        bgPosition = 'center center'; 
-        break; // Gambar Final
-      default: bgPosition = 'center 0%';
-    }
+      // Pengaturan posisi background
+      const getBackgroundStyle = () => {
+        // Transparansi 10% (0.1) warna sand
+        const sandOverlay = 'linear-gradient(rgba(232, 220, 198, 0.1), rgba(232, 220, 198, 0.1))';
+        let bgImage = `url('${mapBgUrl}')`;
+        let bgPosition = 'center 0%'; 
 
-    return {
-      backgroundImage: `${sandOverlay}, ${bgImage}`,
-      backgroundPosition: bgPosition,
-      backgroundSize: 'cover',
-      backgroundAttachment: 'fixed',
-      transition: 'background-position 2s ease-in-out, background-image 1.5s ease-in-out',
-      backgroundColor: '#1e1512'
-    };
-  };
+        switch(step) {
+          case 0: bgPosition = 'center 0%'; break;   // Paling Atas
+          case 1: bgPosition = 'center 50%'; break;  // Tengah (Gunung/Sungai)
+          case 2: bgPosition = 'center 100%'; break; // Bawah (Kingdom)
+          case 3: 
+            bgImage = `url('${finalBgUrl}')`; 
+            bgPosition = 'center center'; 
+            break; // Gambar Final
+          default: bgPosition = 'center 0%';
+        }
 
-  const nextStep = () => {
-    setStep(s => s + 1);
-  };
+        return {
+          backgroundImage: `${sandOverlay}, ${bgImage}`,
+          backgroundPosition: bgPosition,
+          backgroundSize: 'cover',
+          backgroundAttachment: 'fixed',
+          transition: 'background-position 2s ease-in-out, background-image 1.5s ease-in-out',
+        };
+      };
 
-  // Fungsi untuk menyalakan/mematikan suara
-  const toggleSound = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        // Mengatur volume ke 50% agar tidak terlalu keras
-        audioRef.current.volume = 0.5;
-        audioRef.current.play().catch(e => console.log("Audio play failed:", e));
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+      const nextStep = () => {
+        setStep(s => s + 1);
+      };
 
-  return (
-    <div 
-      className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
-      style={{ fontFamily: "'VT323', monospace", color: '#2a1e16', ...getBackgroundStyle() }}
-    >
-      
-      {/* Elemen Audio (Tersembunyi) */}
-      <audio ref={audioRef} src={bgMusicUrl} loop autoPlay />
+      // Fungsi untuk menyalakan/mematikan suara
+      const toggleSound = () => {
+        if (audioRef.current) {
+          if (isPlaying) {
+            audioRef.current.pause();
+          } else {
+            audioRef.current.volume = 0.5;
+            audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+          }
+          setIsPlaying(!isPlaying);
+        }
+      };
 
-      {/* Tombol Toggle Sound (Pojok Kanan Atas) */}
-      <button
-        onClick={toggleSound}
-        className="absolute top-4 right-4 z-50 bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] p-2 px-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-xs md:text-sm uppercase transition-colors"
-        style={{ fontFamily: "'Press Start 2P', cursive" }}
-        title="Toggle Background Music"
-      >
-        {isPlaying ? '🔊 ON' : '🔇 OFF'}
-      </button>
-
-      {/* UI Elements Container */}
-      <div className="relative w-full max-w-[500px] p-4 flex flex-col items-center justify-center min-h-[500px]">
-
-        {/* --- ANIMASI JALUR MERAH --- */}
-        {/* Akan muncul (menggambar dari atas ke bawah) setiap kali berpindah ke Step 1 atau Step 2 */}
-        {step > 0 && step < 3 && (
-          <div 
-            key={`path-${step}`} 
-            className="absolute bottom-[calc(100%-80px)] left-1/2 -translate-x-1/2 w-3 z-0 pixel-path-animate"
-          />
-        )}
-
-        <div key={`card-${step}`} className="relative z-10 w-full animate-pop-in">
+      return (
+        <div 
+          className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
+          style={{ fontFamily: "'VT323', monospace", color: '#2a1e16', ...getBackgroundStyle() }}
+        >
           
-          {/* --- STEP 0: FOLLOW & SUBMIT PROOF --- */}
-          {step === 0 && (
-            <QuestCard stepNum="1" title="The Herald" desc="Follow @CryptoPrideID on X to start your journey." icon="🐦">
-              <div className="flex flex-col gap-4 mt-2">
-                <button 
-                  onClick={() => window.open('https://x.com/CryptoPrideID', '_blank')}
-                  className="w-full bg-[#1a100c] text-[#e8dcc6] border-4 border-[#1a100c] hover:bg-[#2d1b14] py-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase transition-colors"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  [ 1. GO FOLLOW ]
-                </button>
-                
-                <input 
-                  type="text" 
-                  value={twitterHandle}
-                  onChange={(e) => setTwitterHandle(e.target.value)}
-                  className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-3 text-2xl focus:outline-none pixel-shadow-inset"
-                  placeholder="Your @username..."
-                />
-                
-                <div className="flex flex-col md:flex-row items-center gap-3">
-                  <label 
-                    className="w-full md:w-auto bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] py-3 px-4 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase cursor-pointer"
-                    style={{ fontFamily: "'Press Start 2P', cursive" }}
-                  >
-                    [ UPLOAD PROOF ]
-                    <input type="file" className="hidden" onChange={(e) => setProofFile(e.target.files[0])} />
-                  </label>
-                  <span className="text-xl text-[#5d4037] truncate flex-1 text-center md:text-left">
-                    {proofFile ? proofFile.name : 'No file chosen'}
-                  </span>
+          {/* Elemen Audio (Tersembunyi) */}
+          <audio ref={audioRef} src={bgMusicUrl} loop autoPlay />
+
+          {/* Tombol Toggle Sound (Pojok Kanan Atas) */}
+          <button
+            onClick={toggleSound}
+            className="absolute top-4 right-4 z-50 bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] p-2 px-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-xs md:text-sm uppercase transition-colors"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+            title="Toggle Background Music"
+          >
+            {isPlaying ? '🔊 ON' : '🔇 OFF'}
+          </button>
+
+          {/* UI Elements Container */}
+          <div className="relative w-full max-w-[500px] p-4 flex flex-col items-center justify-center min-h-[500px]">
+
+            {/* --- ANIMASI JALUR MERAH --- */}
+            {step > 0 && step < 3 && (
+              <div 
+                key={`path-${step}`} 
+                className="absolute bottom-[calc(100%-80px)] left-1/2 -translate-x-1/2 w-3 z-0 pixel-path-animate"
+              />
+            )}
+
+            <div key={`card-${step}`} className="relative z-10 w-full animate-pop-in">
+              
+              {/* --- STEP 0: FOLLOW & SUBMIT PROOF --- */}
+              {step === 0 && (
+                <QuestCard stepNum="1" title="The Herald" desc="Follow @CryptoPrideID on X to start your journey." icon="🐦">
+                  <div className="flex flex-col gap-4 mt-2">
+                    <button 
+                      onClick={() => window.open('https://x.com/CryptoPrideID', '_blank')}
+                      className="w-full bg-[#1a100c] text-[#e8dcc6] border-4 border-[#1a100c] hover:bg-[#2d1b14] py-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase transition-colors"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      [ 1. GO FOLLOW ]
+                    </button>
+                    
+                    <input 
+                      type="text" 
+                      value={twitterHandle}
+                      onChange={(e) => setTwitterHandle(e.target.value)}
+                      className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-3 text-2xl focus:outline-none pixel-shadow-inset"
+                      placeholder="Your @username..."
+                    />
+                    
+                    <div className="flex flex-col md:flex-row items-center gap-3">
+                      <label 
+                        className="w-full md:w-auto bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] py-3 px-4 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase cursor-pointer"
+                        style={{ fontFamily: "'Press Start 2P', cursive" }}
+                      >
+                        [ UPLOAD PROOF ]
+                        <input type="file" className="hidden" onChange={(e) => setProofFile(e.target.files[0])} />
+                      </label>
+                      <span className="text-xl text-[#5d4037] truncate flex-1 text-center md:text-left">
+                        {proofFile ? proofFile.name : 'No file chosen'}
+                      </span>
+                    </div>
+
+                    <button 
+                      disabled={twitterHandle.trim().length === 0 || !proofFile}
+                      onClick={nextStep}
+                      className="w-full bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      SUBMIT & CONTINUE {'>'}
+                    </button>
+                  </div>
+                </QuestCard>
+              )}
+
+              {/* --- STEP 1: LIKE, REPOST, COMMENT --- */}
+              {step === 1 && (
+                <QuestCard stepNum="2" title="Spread & Pledge" desc="Like, Repost, and Comment 'Hail King & drop EVM address'." icon="🔁">
+                  <div className="flex flex-col gap-4 mt-2">
+                    <button 
+                      onClick={() => window.open('https://x.com/CryptoPrideID/status/2025708688573677666?s=20', '_blank')}
+                      className="w-full bg-[#1a100c] text-[#e8dcc6] border-4 border-[#1a100c] hover:bg-[#2d1b14] py-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase transition-colors"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      [ GO TO POST ]
+                    </button>
+                    
+                    <input 
+                      type="text" 
+                      value={commentLink}
+                      onChange={(e) => setCommentLink(e.target.value)}
+                      className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-3 text-2xl focus:outline-none pixel-shadow-inset"
+                      placeholder="Paste link proof comment here..."
+                    />
+
+                    <button 
+                      disabled={commentLink.trim().length === 0}
+                      onClick={nextStep}
+                      className="w-full bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      SUBMIT LINK {'>'}
+                    </button>
+                  </div>
+                </QuestCard>
+              )}
+
+              {/* --- STEP 2: SUBMIT EVM --- */}
+              {step === 2 && (
+                <QuestCard stepNum="3" title="Enter Kingdom" desc="Submit your EVM Address to unlock the gates!" icon="🏰">
+                  <div className="flex flex-col gap-4 mt-2">
+                    <input 
+                      type="text" 
+                      value={evmAddress}
+                      onChange={(e) => setEvmAddress(e.target.value)}
+                      className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-4 text-2xl focus:outline-none pixel-shadow-inset"
+                      placeholder="0x..."
+                    />
+                    
+                    <button 
+                      disabled={evmAddress.trim().length === 0}
+                      onClick={nextStep}
+                      className="w-full bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase transition-colors"
+                      style={{ fontFamily: "'Press Start 2P', cursive" }}
+                    >
+                      🚪 UNLOCK GATES
+                    </button>
+                  </div>
+                </QuestCard>
+              )}
+
+              {/* --- STEP 3: FINAL (Hail The King) --- */}
+              {step === 3 && (
+                <div className="flex flex-col items-center justify-center text-center animate-float mt-10">
+                  <div className="relative inline-block">
+                    {/* Layer 3: Deepest Shadow (Black) */}
+                    <h1 className="absolute top-[8px] left-[8px] text-5xl md:text-7xl font-bold tracking-widest text-[#1a100c]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
+                      HAIL<br/>THE KING!
+                    </h1>
+                    {/* Layer 2: Middle Shadow (Dark Red) */}
+                    <h1 className="absolute top-[4px] left-[4px] text-5xl md:text-7xl font-bold tracking-widest text-[#8b1e10]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
+                      HAIL<br/>THE KING!
+                    </h1>
+                    {/* Layer 1: Front Solid Color */}
+                    <h1 className="relative text-5xl md:text-7xl font-bold tracking-widest text-[#d4af37]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
+                      HAIL<br/>THE KING!
+                    </h1>
+                  </div>
+
+                  <div className="bg-[#1a100c] px-6 py-3 border-4 border-[#d4af37] pixel-shadow mt-8">
+                    <p className="text-[#e8dcc6] text-2xl md:text-3xl uppercase tracking-wider">
+                      Welcome to Pride Kingdom
+                    </p>
+                  </div>
                 </div>
+              )}
 
-                <button 
-                  disabled={twitterHandle.trim().length === 0 || !proofFile}
-                  onClick={nextStep}
-                  className="w-full bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  SUBMIT & CONTINUE {'>'}
-                </button>
-              </div>
-            </QuestCard>
-          )}
+            </div>
+          </div>
 
-          {/* --- STEP 1: LIKE, REPOST, COMMENT --- */}
-          {step === 1 && (
-            <QuestCard stepNum="2" title="Spread & Pledge" desc="Like, Repost, and Comment 'Hail King & drop EVM address'." icon="🔁">
-              <div className="flex flex-col gap-4 mt-2">
-                <button 
-                  onClick={() => window.open('https://x.com/CryptoPrideID/status/2025708688573677666?s=20', '_blank')}
-                  className="w-full bg-[#1a100c] text-[#e8dcc6] border-4 border-[#1a100c] hover:bg-[#2d1b14] py-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-sm uppercase transition-colors"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  [ GO TO POST ]
-                </button>
-                
-                <input 
-                  type="text" 
-                  value={commentLink}
-                  onChange={(e) => setCommentLink(e.target.value)}
-                  className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-3 text-2xl focus:outline-none pixel-shadow-inset"
-                  placeholder="Paste link proof comment here..."
+          {/* Indikator Progres di bagian bawah */}
+          {step < 3 && (
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3">
+              {[0, 1, 2].map((s) => (
+                <div 
+                  key={s} 
+                  className={`w-5 h-5 border-4 border-[#1a100c] transition-colors duration-500 ${step >= s ? 'bg-[#8b1e10]' : 'bg-[#e8dcc6] opacity-60'}`}
                 />
-
-                <button 
-                  disabled={commentLink.trim().length === 0}
-                  onClick={nextStep}
-                  className="w-full bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  SUBMIT LINK {'>'}
-                </button>
-              </div>
-            </QuestCard>
-          )}
-
-          {/* --- STEP 2: SUBMIT EVM --- */}
-          {step === 2 && (
-            <QuestCard stepNum="3" title="Enter Kingdom" desc="Submit your EVM Address to unlock the gates!" icon="🏰">
-              <div className="flex flex-col gap-4 mt-2">
-                <input 
-                  type="text" 
-                  value={evmAddress}
-                  onChange={(e) => setEvmAddress(e.target.value)}
-                  className="w-full border-4 border-[#1a100c] bg-[#f4ebd8] px-4 py-4 text-2xl focus:outline-none pixel-shadow-inset"
-                  placeholder="0x..."
-                />
-                
-                <button 
-                  disabled={evmAddress.trim().length === 0}
-                  onClick={nextStep}
-                  className="w-full bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase transition-colors"
-                  style={{ fontFamily: "'Press Start 2P', cursive" }}
-                >
-                  🚪 UNLOCK GATES
-                </button>
-              </div>
-            </QuestCard>
-          )}
-
-          {/* --- STEP 3: FINAL (Hail The King) --- */}
-          {step === 3 && (
-            <div className="flex flex-col items-center justify-center text-center animate-float mt-10">
-              <div className="relative inline-block">
-                {/* Layer 3: Deepest Shadow (Black) */}
-                <h1 className="absolute top-[8px] left-[8px] text-5xl md:text-7xl font-bold tracking-widest text-[#1a100c]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
-                  HAIL<br/>THE KING!
-                </h1>
-                {/* Layer 2: Middle Shadow (Dark Red) */}
-                <h1 className="absolute top-[4px] left-[4px] text-5xl md:text-7xl font-bold tracking-widest text-[#8b1e10]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
-                  HAIL<br/>THE KING!
-                </h1>
-                {/* Layer 1: Front Solid Color */}
-                <h1 className="relative text-5xl md:text-7xl font-bold tracking-widest text-[#d4af37]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
-                  HAIL<br/>THE KING!
-                </h1>
-              </div>
-
-              <div className="bg-[#1a100c] px-6 py-3 border-4 border-[#d4af37] pixel-shadow mt-8">
-                <p className="text-[#e8dcc6] text-2xl md:text-3xl uppercase tracking-wider">
-                  Welcome to Pride Kingdom
-                </p>
-              </div>
+              ))}
             </div>
           )}
 
         </div>
-      </div>
+      );
+    }
 
-      {/* Indikator Progres di bagian bawah */}
-      {step < 3 && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3">
-          {[0, 1, 2].map((s) => (
+    // Komponen Reusable QuestCard
+    function QuestCard({ stepNum, title, desc, icon, children }) {
+      return (
+        <div className="bg-[#e8dcc6] border-4 border-[#1a100c] p-6 pixel-shadow">
+          <div className="flex items-center gap-4 mb-4 border-b-4 border-[#1a100c] pb-4">
             <div 
-              key={s} 
-              className={`w-5 h-5 border-4 border-[#1a100c] transition-colors duration-500 ${step >= s ? 'bg-[#8b1e10]' : 'bg-[#e8dcc6] opacity-60'}`}
-            />
-          ))}
+              className="w-12 h-12 shrink-0 bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] flex items-center justify-center text-2xl"
+              style={{ fontFamily: "'Press Start 2P', cursive" }}
+            >
+              {stepNum}
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold uppercase text-[#1a100c]">
+              {title}
+            </h2>
+          </div>
+          
+          <div className="flex items-start gap-4 mb-4">
+            <div className="text-4xl md:text-5xl mt-1 shrink-0">{icon}</div>
+            <p className="text-xl md:text-2xl text-[#5d4037] leading-relaxed">
+              {desc}
+            </p>
+          </div>
+
+          {/* Area untuk Form/Button */}
+          {children}
         </div>
-      )}
+      );
+    }
 
-    </div>
-  );
-}
-
-// Komponen Reusable QuestCard (diubah agar bisa menerima children element seperti form input)
-function QuestCard({ stepNum, title, desc, icon, children }) {
-  return (
-    <div className="bg-[#e8dcc6] border-4 border-[#1a100c] p-6 pixel-shadow">
-      <div className="flex items-center gap-4 mb-4 border-b-4 border-[#1a100c] pb-4">
-        <div 
-          className="w-12 h-12 shrink-0 bg-[#8b1e10] text-[#e8dcc6] border-4 border-[#1a100c] flex items-center justify-center text-2xl"
-          style={{ fontFamily: "'Press Start 2P', cursive" }}
-        >
-          {stepNum}
-        </div>
-        <h2 className="text-2xl md:text-3xl font-bold uppercase text-[#1a100c]">
-          {title}
-        </h2>
-      </div>
-      
-      <div className="flex items-start gap-4 mb-4">
-        <div className="text-4xl md:text-5xl mt-1 shrink-0">{icon}</div>
-        <p className="text-xl md:text-2xl text-[#5d4037] leading-relaxed">
-          {desc}
-        </p>
-      </div>
-
-      {/* Area untuk Form/Button */}
-      {children}
-    </div>
-  );
-}
+    // Render Aplikasi ke dalam div #root
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
