@@ -145,8 +145,8 @@
       const audioRef = useRef(null);
       const bgMusicUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Kingdom%20of%20Tiny%20Stars.mp3';
 
-      // !!! PENTING: GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA !!!
-      const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0630zGi0Z-fGxaZgdYLwgBw_xPPHo5EFCYujVofO0OciJWPI6RuJeyzCUoGa4Swrh/exec';
+      // !!! URL WEB APP GOOGLE SCRIPT ANDA !!!
+      const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2zX8MhcJo-QuL4cvHyLnataCqpz-WSYfJBNqSEF6OzxFTEqs6o5_op4VWQ-ocZHXN/exec';
 
       useEffect(() => {
         if (audioRef.current) {
@@ -196,7 +196,8 @@
       const submitDataToExcel = async () => {
         setIsSubmitting(true);
 
-        const formData = new FormData();
+        // MENGGUNAKAN URLSearchParams AGAR GOOGLE SCRIPT BISA MEMBACA e.parameter DENGAN SEMPURNA
+        const formData = new URLSearchParams();
         formData.append('twitterHandle', twitterHandle);
         formData.append('fileName', proofFile ? proofFile.name : 'No File');
         formData.append('commentLink', commentLink);
