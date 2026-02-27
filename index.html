@@ -192,11 +192,10 @@
         setStep(s => s + 1);
       };
 
-      // Fungsi untuk Submit Data ke Google Sheets
+      // Fungsi untuk Submit Data ke Google Sheets (Diperbarui agar super cepat!)
       const submitDataToExcel = async () => {
         setIsSubmitting(true);
 
-        // MENGGUNAKAN URLSearchParams AGAR GOOGLE SCRIPT BISA MEMBACA e.parameter DENGAN SEMPURNA
         const formData = new URLSearchParams();
         formData.append('twitterHandle', twitterHandle);
         formData.append('fileName', proofFile ? proofFile.name : 'No File');
@@ -206,20 +205,29 @@
         try {
           if(GOOGLE_SCRIPT_URL === 'GANTI_DENGAN_URL_GOOGLE_SCRIPT_ANDA_DISINI') {
               alert("PERINGATAN: URL Google Script belum diganti. Data tidak tersimpan, namun simulasi akan dilanjutkan.");
-          } else {
-              await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: formData,
-                mode: 'no-cors' 
-              });
-          }
+              setIsSubmitting(false);
+              nextStep();
+              return;
+          } 
           
-          setIsSubmitting(false);
-          nextStep(); 
+          // API Call dilakukan secara async murni (tanpa await) agar dikerjakan di latar belakang
+          fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: formData,
+            mode: 'no-cors' 
+          }).catch(error => console.error("Background Fetch Error:", error));
+          
+          // Simulasi loading UI maksimal 1.5 detik agar terasa cepat dan responsif
+          setTimeout(() => {
+            setIsSubmitting(false);
+            nextStep();
+          }, 1500);
+
         } catch (error) {
           console.error('Error submitting data:', error);
-          alert('Gagal mengirim data. Silakan coba lagi.');
+          // Tetap lanjutkan meskipun error agar user tidak stuck
           setIsSubmitting(false);
+          nextStep();
         }
       };
 
