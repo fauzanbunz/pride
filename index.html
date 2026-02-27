@@ -5,20 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pride Kingdom</title>
   
-  <!-- Load Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Load React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Load Babel (Compiler in-browser untuk JSX) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Load Pixel Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
-  <!-- Custom CSS (Animasi & Style Pixel) -->
   <style>
     body {
       margin: 0;
@@ -37,7 +29,6 @@
       cursor: not-allowed;
     }
     
-    /* Animasi Popup Masuk */
     @keyframes popIn {
       0% { transform: scale(0.8) translateY(20px); opacity: 0; }
       100% { transform: scale(1) translateY(0); opacity: 1; }
@@ -46,7 +37,6 @@
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
-    /* Animasi Garis Merah (Jalur Peta) */
     @keyframes drawPath {
       0% { height: 0; opacity: 0; }
       20% { opacity: 1; }
@@ -58,46 +48,112 @@
       animation-delay: 0.2s;
     }
 
-    /* Animasi Teks Final */
     @keyframes float {
       0% { transform: translateY(0px); }
       50% { transform: translateY(-15px); }
       100% { transform: translateY(0px); }
     }
     .animate-float { animation: float 3s ease-in-out infinite; }
+    
+    .loader {
+      border: 4px solid #e8dcc6;
+      border-top: 4px solid #1a100c;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   
-  <!-- Tempat aplikasi React akan di-render -->
   <div id="root"></div>
 
-  <!-- Script React menggunakan tipe text/babel agar terbaca oleh browser -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
+
+    // --- KOMPONEN BACKGROUND MATRIX PIXEL ---
+    const MatrixImageOverlay = () => {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        let interval;
+
+        const resizeCanvas = () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          ctx.fillStyle = '#1e1512';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const blockSize = 24; 
+        const columns = Math.ceil(canvas.width / blockSize);
+        const rainDrops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -50));
+
+        const draw = () => {
+          ctx.fillStyle = 'rgba(30, 21, 18, 0.15)'; 
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          for (let i = 0; i < rainDrops.length; i++) {
+            const x = i * blockSize;
+            const y = rainDrops[i] * blockSize;
+            ctx.clearRect(x, y, blockSize, blockSize);
+
+            if (y > canvas.height && Math.random() > 0.95) {
+              rainDrops[i] = 0;
+            }
+            rainDrops[i]++;
+          }
+        };
+
+        interval = setInterval(draw, 45);
+
+        return () => {
+          clearInterval(interval);
+          window.removeEventListener('resize', resizeCanvas);
+        };
+      }, []);
+
+      return (
+        <canvas
+          ref={canvasRef}
+          style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            zIndex: 0, pointerEvents: 'none', opacity: 0.5
+          }}
+        />
+      );
+    };
 
     function App() {
       const [step, setStep] = useState(0);
       
-      // State untuk form isian
       const [twitterHandle, setTwitterHandle] = useState('');
       const [proofFile, setProofFile] = useState(null);
       const [commentLink, setCommentLink] = useState('');
       const [evmAddress, setEvmAddress] = useState('');
-
-      // State & Ref untuk Audio Latar Belakang
+      
+      const [isSubmitting, setIsSubmitting] = useState(false);
       const [isPlaying, setIsPlaying] = useState(true);
       const audioRef = useRef(null);
       const bgMusicUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Kingdom%20of%20Tiny%20Stars.mp3';
 
-      // Atur autoplay saat pertama dimuat
+      // !!! PENTING: GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA !!!
+      const GOOGLE_SCRIPT_URL = 'GANTI_DENGAN_URL_GOOGLE_SCRIPT_ANDA_DISINI';
+
       useEffect(() => {
         if (audioRef.current) {
           audioRef.current.volume = 0.5;
           const playPromise = audioRef.current.play();
           if (playPromise !== undefined) {
             playPromise.catch(error => {
-              // Jika browser memblokir autoplay, set state ke OFF
               console.log("Autoplay diblokir oleh browser:", error);
               setIsPlaying(false);
             });
@@ -105,30 +161,26 @@
         }
       }, []);
 
-      // URLs Background
       const mapBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_tzq5sstzq5sstzq5.png';
       const finalBgUrl = 'https://raw.githubusercontent.com/fauzanbunz/pride/main/Gemini_Generated_Image_wyiv2wwyiv2wwyiv.png';
 
-      // Pengaturan posisi background
       const getBackgroundStyle = () => {
-        // Transparansi 10% (0.1) warna sand
-        const sandOverlay = 'linear-gradient(rgba(232, 220, 198, 0.1), rgba(232, 220, 198, 0.1))';
         let bgImage = `url('${mapBgUrl}')`;
         let bgPosition = 'center 0%'; 
 
         switch(step) {
-          case 0: bgPosition = 'center 0%'; break;   // Paling Atas
-          case 1: bgPosition = 'center 50%'; break;  // Tengah (Gunung/Sungai)
-          case 2: bgPosition = 'center 100%'; break; // Bawah (Kingdom)
+          case 0: bgPosition = 'center 0%'; break;   
+          case 1: bgPosition = 'center 50%'; break;  
+          case 2: bgPosition = 'center 100%'; break; 
           case 3: 
             bgImage = `url('${finalBgUrl}')`; 
             bgPosition = 'center center'; 
-            break; // Gambar Final
+            break; 
           default: bgPosition = 'center 0%';
         }
 
         return {
-          backgroundImage: `${sandOverlay}, ${bgImage}`,
+          backgroundImage: bgImage,
           backgroundPosition: bgPosition,
           backgroundSize: 'cover',
           backgroundAttachment: 'fixed',
@@ -140,7 +192,36 @@
         setStep(s => s + 1);
       };
 
-      // Fungsi untuk menyalakan/mematikan suara
+      // Fungsi untuk Submit Data ke Google Sheets
+      const submitDataToExcel = async () => {
+        setIsSubmitting(true);
+
+        const formData = new FormData();
+        formData.append('twitterHandle', twitterHandle);
+        formData.append('fileName', proofFile ? proofFile.name : 'No File');
+        formData.append('commentLink', commentLink);
+        formData.append('evmAddress', evmAddress);
+
+        try {
+          if(GOOGLE_SCRIPT_URL === 'https://fauzanbunz.github.io/pride/') {
+              alert("PERINGATAN: URL Google Script belum diganti. Data tidak tersimpan, namun simulasi akan dilanjutkan.");
+          } else {
+              await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors' 
+              });
+          }
+          
+          setIsSubmitting(false);
+          nextStep(); 
+        } catch (error) {
+          console.error('Error submitting data:', error);
+          alert('Gagal mengirim data. Silakan coba lagi.');
+          setIsSubmitting(false);
+        }
+      };
+
       const toggleSound = () => {
         if (audioRef.current) {
           if (isPlaying) {
@@ -155,14 +236,14 @@
 
       return (
         <div 
-          className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
+          className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-[#1e1512]"
           style={{ fontFamily: "'VT323', monospace", color: '#2a1e16', ...getBackgroundStyle() }}
         >
-          
-          {/* Elemen Audio (Tersembunyi) */}
+          {/* Overlay Matrix */}
+          <MatrixImageOverlay />
+
           <audio ref={audioRef} src={bgMusicUrl} loop autoPlay />
 
-          {/* Tombol Toggle Sound (Pojok Kanan Atas) */}
           <button
             onClick={toggleSound}
             className="absolute top-4 right-4 z-50 bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] p-2 px-3 flex items-center justify-center pixel-shadow-sm btn-pixel text-xs md:text-sm uppercase transition-colors"
@@ -172,10 +253,8 @@
             {isPlaying ? '🔊 ON' : '🔇 OFF'}
           </button>
 
-          {/* UI Elements Container */}
-          <div className="relative w-full max-w-[500px] p-4 flex flex-col items-center justify-center min-h-[500px]">
+          <div className="relative z-10 w-full max-w-[500px] p-4 flex flex-col items-center justify-center min-h-[500px]">
 
-            {/* --- ANIMASI JALUR MERAH --- */}
             {step > 0 && step < 3 && (
               <div 
                 key={`path-${step}`} 
@@ -185,7 +264,6 @@
 
             <div key={`card-${step}`} className="relative z-10 w-full animate-pop-in">
               
-              {/* --- STEP 0: FOLLOW & SUBMIT PROOF --- */}
               {step === 0 && (
                 <QuestCard stepNum="1" title="The Herald" desc="Follow @CryptoPrideID on X to start your journey." icon="🐦">
                   <div className="flex flex-col gap-4 mt-2">
@@ -213,7 +291,7 @@
                         [ UPLOAD PROOF ]
                         <input type="file" className="hidden" onChange={(e) => setProofFile(e.target.files[0])} />
                       </label>
-                      <span className="text-xl text-[#5d4037] truncate flex-1 text-center md:text-left">
+                      <span className="text-xl text-[#5d4037] truncate flex-1 text-center md:text-left bg-[#e8dcc6] px-2 py-1">
                         {proofFile ? proofFile.name : 'No file chosen'}
                       </span>
                     </div>
@@ -230,7 +308,6 @@
                 </QuestCard>
               )}
 
-              {/* --- STEP 1: LIKE, REPOST, COMMENT --- */}
               {step === 1 && (
                 <QuestCard stepNum="2" title="Spread & Pledge" desc="Like, Repost, and Comment 'Hail King & drop EVM address'." icon="🔁">
                   <div className="flex flex-col gap-4 mt-2">
@@ -262,7 +339,6 @@
                 </QuestCard>
               )}
 
-              {/* --- STEP 2: SUBMIT EVM --- */}
               {step === 2 && (
                 <QuestCard stepNum="3" title="Enter Kingdom" desc="Submit your EVM Address to unlock the gates!" icon="🏰">
                   <div className="flex flex-col gap-4 mt-2">
@@ -275,30 +351,30 @@
                     />
                     
                     <button 
-                      disabled={evmAddress.trim().length === 0}
-                      onClick={nextStep}
+                      disabled={evmAddress.trim().length === 0 || isSubmitting}
+                      onClick={submitDataToExcel}
                       className="w-full bg-[#d4af37] text-[#1a100c] border-4 border-[#1a100c] hover:bg-[#e5c65a] py-4 mt-2 flex items-center justify-center pixel-shadow-sm btn-pixel text-base uppercase transition-colors"
                       style={{ fontFamily: "'Press Start 2P', cursive" }}
                     >
-                      🚪 UNLOCK GATES
+                      {isSubmitting ? (
+                        <><div className="loader"></div> SUBMITTING...</>
+                      ) : (
+                        "🚪 UNLOCK GATES"
+                      )}
                     </button>
                   </div>
                 </QuestCard>
               )}
 
-              {/* --- STEP 3: FINAL (Hail The King) --- */}
               {step === 3 && (
                 <div className="flex flex-col items-center justify-center text-center animate-float mt-10">
                   <div className="relative inline-block">
-                    {/* Layer 3: Deepest Shadow (Black) */}
                     <h1 className="absolute top-[8px] left-[8px] text-5xl md:text-7xl font-bold tracking-widest text-[#1a100c]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
                       HAIL<br/>THE KING!
                     </h1>
-                    {/* Layer 2: Middle Shadow (Dark Red) */}
                     <h1 className="absolute top-[4px] left-[4px] text-5xl md:text-7xl font-bold tracking-widest text-[#8b1e10]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
                       HAIL<br/>THE KING!
                     </h1>
-                    {/* Layer 1: Front Solid Color */}
                     <h1 className="relative text-5xl md:text-7xl font-bold tracking-widest text-[#d4af37]" style={{ fontFamily: "'Press Start 2P', cursive", lineHeight: '1.4' }}>
                       HAIL<br/>THE KING!
                     </h1>
@@ -315,9 +391,8 @@
             </div>
           </div>
 
-          {/* Indikator Progres di bagian bawah */}
           {step < 3 && (
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3">
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-10">
               {[0, 1, 2].map((s) => (
                 <div 
                   key={s} 
@@ -331,7 +406,6 @@
       );
     }
 
-    // Komponen Reusable QuestCard
     function QuestCard({ stepNum, title, desc, icon, children }) {
       return (
         <div className="bg-[#e8dcc6] border-4 border-[#1a100c] p-6 pixel-shadow">
@@ -354,13 +428,11 @@
             </p>
           </div>
 
-          {/* Area untuk Form/Button */}
           {children}
         </div>
       );
     }
 
-    // Render Aplikasi ke dalam div #root
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
